@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.example.administrator.camera"
+<manifest xmlns:tools="http://schemas.android.com/tools"
+          package="com.example.administrator.camera"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
+                     tools:ignore="ProtectedPermissions"/>
 
     <application
         android:allowBackup="true"
@@ -22,14 +26,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".MyCameraActivity"
-                  android:label="MyCamera"
-                  android:theme="@style/AppTheme.NoActionBar">
-        <intent-filter>
-            <action android:name="android.media.action.MYIMAGE_CAPTURE"/>
+        <activity
+            android:name=".MyCameraActivity"
+            android:label="MyCamera"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.media.action.MYIMAGE_CAPTURE"/>
 
-            <category android:name="android.intent.category.DEFAULT"/>
-        </intent-filter>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
     </application>
 

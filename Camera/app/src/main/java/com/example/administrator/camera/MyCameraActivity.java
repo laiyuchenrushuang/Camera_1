@@ -1,7 +1,9 @@
 package com.example.administrator.camera;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,11 +13,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Button;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder.Callback, View.OnClickListener {
     private static final String TAG = "MyCameraActivity" ;
 
     private Camera mCamera;
@@ -23,23 +29,34 @@ public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder
     private Button mButton;
     private SurfaceHolder mHolder;
 
+    private Button mTakePicture;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mycamera);
+        //camera的权限 还有 sdcard读写 增删权限
         permision();
+
         init();
     }
 
     private void permision() {
-        // check Android 6 permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             Log.i("TEST","Granted");
-            //init(barcodeScannerView, getIntent(), null);
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
+        }
+
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(this, ActionUtils.PERMISSIONS_STORAGE,
+                    ActionUtils.REQUEST_EXTERNAL_STORAGE);
         }
     }
 
@@ -47,8 +64,8 @@ public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder
         mSurfaceView = findViewById(R.id.camera_surface);
         mHolder = mSurfaceView.getHolder();
         mHolder.addCallback(this);
-
-        mButton = findViewById(R.id.camera_take_picture);
+        mTakePicture = findViewById(R.id.camera_take_picture);
+        mTakePicture.setOnClickListener(this);
     }
 
     @Override
@@ -102,6 +119,36 @@ public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder
         }
     }
 
+
+    private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
+
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            File pictureDir = new File("/sdcard/temp.png");
+            if (pictureDir == null) {
+                Log.d(TAG,
+                        "Error creating media file, check storage permissions!");
+                return;
+            }
+
+            try {
+                FileOutputStream fos = new FileOutputStream(pictureDir);
+                fos.write(data);
+                fos.close();
+
+                Intent i = new Intent(MyCameraActivity.this,MainActivity.class);
+                i.putExtra("pathPicture",pictureDir.getPath());
+                Log.d(TAG, "onPictureTaken: ");
+                startActivity(i);
+                MyCameraActivity.this.finish();
+            } catch (FileNotFoundException e) {
+                Log.d(TAG, "File not found: " + e.getMessage());
+            } catch (IOException e) {
+                Log.d(TAG, "Error accessing file: " + e.getMessage());
+            }
+        }
+    };
+
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         setStartPreview(mCamera, mHolder);
@@ -118,5 +165,29 @@ public class MyCameraActivity extends AppCompatActivity implements SurfaceHolder
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         releaseCamera();
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch(view.getId()){
+            case R.id.camera_take_picture:
+                capture(view);
+        }
+    }
+
+    private void capture(View view) {
+        Camera.Parameters parameters = mCamera.getParameters();
+        parameters.setPictureFormat(ImageFormat.JPEG);
+        parameters.setPreviewSize(800,400);
+        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+
+        mCamera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                if (success){
+                    mCamera.takePicture(null, null, mPictureCallback);
+                }
+            }
+        });
     }
 }

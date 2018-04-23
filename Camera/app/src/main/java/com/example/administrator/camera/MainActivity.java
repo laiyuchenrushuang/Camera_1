@@ -3,6 +3,7 @@ package com.example.administrator.camera;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity
     private ImageView mImageView;
 
     private String mSystemPicturePath;
+    private String mMyPicturePath;
+
 
     private Bitmap mBitmap = null;
 
@@ -60,7 +63,23 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void init() {
+        //拍照后的结果数据显示
+        mMyPicturePath = getIntent().getStringExtra("pathPicture");
+
         mImageView = findViewById(R.id.camera_imageview);
+        if (null != mMyPicturePath) {
+            FileInputStream fis =null;
+            try {
+                fis = new FileInputStream(mMyPicturePath);
+                mBitmap = BitmapFactory.decodeStream(fis);
+                Matrix m = new Matrix();
+                m.setRotate(90);
+                mBitmap = Bitmap.createBitmap(mBitmap,0,0,mBitmap.getWidth(),mBitmap.getHeight(),m,true);
+                mImageView.setImageBitmap(mBitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
 
         getSystemPicture();
 
@@ -116,6 +135,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_mycamera) {
             Intent intent = new Intent(ActionUtils.ACTION_MY_IMAGE_CAPTURE);
             startActivity(intent);
+            MainActivity.this.finish();
             //系统的camera
         } else if (id == R.id.nav_systempathpool) {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
